@@ -1,0 +1,54 @@
+version: 2.1
+
+jobs:
+  PushImage:
+    docker:
+      - image: docker:17.05.0-ce-git
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run:
+          name: front-end
+          command: |
+            cd udagram-frontend
+            docker build -t ngocdatfpt/udagram-frontend .
+      - run:
+          name: Publish Docker Image to Docker Hub
+          command: |
+            docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_PASS"
+            docker push ngocdatfpt/udagram-frontend
+      - run:
+          name: backend-feed
+          command: |
+            cd feed-service
+            docker build -t ngocdatfpt/udagram-api-feed .
+      - run:
+          name: Publish Docker Image to Docker Hub
+          command: |
+            docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_PASS"
+            docker push ngocdatfpt/udagram-api-feed
+      - run:
+          name: Build user-backend
+          command: |
+            cd user-service
+            docker build -t ngocdatfpt/udagram-api-user .
+      - run:
+          name: Publish Docker Image to Docker Hub
+          command: |
+            docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_PASS"
+            docker push ngocdatfpt/udagram-api-user
+      - run:
+          name: Build reverseproxy
+          command: |
+            cd reverse-proxy
+            docker build -t ngocdatfpt/reverseproxy .
+      - run:
+          name: Publish Docker Image to Docker Hub
+          command: |
+            docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_PASS"
+            docker push ngocdatfpt/reverseproxy
+workflows:
+  version: 2
+  deploy_workflow:
+    jobs:
+      - PushImage
